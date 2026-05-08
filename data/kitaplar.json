@@ -1,0 +1,219 @@
+[
+  {
+    "kitap_id": 1,
+    "ad": "Suç ve Ceza",
+    "yazar": "Fyodor Dostoyevski",
+    "kategori": "Roman",
+    "durum": "odunc"
+  },
+  {
+    "kitap_id": 2,
+    "ad": "1984",
+    "yazar": "George Orwell",
+    "kategori": "Distopya",
+    "durum": "odunc"
+  },
+  {
+    "kitap_id": 3,
+    "ad": "Sapiens: İnsanlığın Kısa Tarihi",
+    "yazar": "Yuval Noah Harari",
+    "kategori": "Tarih",
+    "durum": "odunc"
+  },
+  {
+    "kitap_id": 4,
+    "ad": "Dune",
+    "yazar": "Frank Herbert",
+    "kategori": "Bilim Kurgu",
+    "durum": "odunc"
+  },
+  {
+    "kitap_id": 5,
+    "ad": "Şeker Portakalı",
+    "yazar": "José Mauro de Vasconcelos",
+    "kategori": "Roman",
+    "durum": "musait"
+  },
+  {
+    "kitap_id": 6,
+    "ad": "Cosmos",
+    "yazar": "Carl Sagan",
+    "kategori": "Bilim",
+    "durum": "odunc"
+  },
+  {
+    "kitap_id": 7,
+    "ad": "Küçük Prens",
+    "yazar": "Antoine de Saint-Exupéry",
+    "kategori": "Çocuk",
+    "durum": "musait"
+  },
+  {
+    "kitap_id": 8,
+    "ad": "Yüzüklerin Efendisi",
+    "yazar": "J. R. R. Tolkien",
+    "kategori": "Fantastik",
+    "durum": "odunc"
+  },
+  {
+    "kitap_id": 9,
+    "ad": "Tutunamayanlar",
+    "yazar": "Oğuz Atay",
+    "kategori": "Roman",
+    "durum": "odunc"
+  },
+  {
+    "kitap_id": 10,
+    "ad": "Kürk Mantolu Madonna",
+    "yazar": "Sabahattin Ali",
+    "kategori": "Roman",
+    "durum": "musait"
+  },
+  {
+    "kitap_id": 11,
+    "ad": "Bir Bilim Adamının Romanı",
+    "yazar": "Oğuz Atay",
+    "kategori": "Biyografi",
+    "durum": "musait"
+  },
+  {
+    "kitap_id": 12,
+    "ad": "Hayvan Çiftliği",
+    "yazar": "George Orwell",
+    "kategori": "Distopya",
+    "durum": "musait"
+  },
+  {
+    "kitap_id": 13,
+    "ad": "Yabancı",
+    "yazar": "Albert Camus",
+    "kategori": "Felsefe",
+    "durum": "musait"
+  },
+  {
+    "kitap_id": 14,
+    "ad": "Beyaz Diş",
+    "yazar": "Jack London",
+    "kategori": "Roman",
+    "durum": "musait"
+  },
+  {
+    "kitap_id": 15,
+    "ad": "Kısa Hikayeler",
+    "yazar": "Anton Çehov",
+    "kategori": "Hikaye",
+    "durum": "musait"
+  },
+  {
+    "kitap_id": 16,
+    "ad": "Zaman Makinesi",
+    "yazar": "H. G. Wells",
+    "kategori": "Bilim Kurgu",
+    "durum": "musait"
+  },
+  {
+    "kitap_id": 17,
+    "ad": "Drakula",
+    "yazar": "Bram Stoker",
+    "kategori": "Korku",
+    "durum": "musait"
+  },
+  {
+    "kitap_id": 18,
+    "ad": "Bir Ömür Nasıl Yaşanır",
+    "yazar": "İlber Ortaylı",
+    "kategori": "Tarih",
+    "durum": "musait"
+  },
+  {
+    "kitap_id": 19,
+    "ad": "Ahir Zaman Çocukları",
+    "yazar": "İskender Pala",
+    "kategori": "Roman",
+    "durum": "musait"
+  },
+  {
+    "kitap_id": 20,
+    "ad": "Olağanüstü Bir Gece",
+    "yazar": "Stefan Zweig",
+    "kategori": "Roman",
+    "durum": "musait"
+  },
+  {
+    "kitap_id": 21,
+    "ad": "Beyaz Geceler",
+    "yazar": "Fyodor Dostoyevski",
+    "kategori": "Roman",
+    "durum": "musait"
+  },
+  {
+    "kitap_id": 22,
+    "ad": "Anna Karenina",
+    "yazar": "Lev Tolstoy",
+    "kategori": "Roman",
+    "durum": "musait"
+  },
+  {
+    "kitap_id": 23,
+    "ad": "Sefiller",
+    "yazar": "Victor Hugo",
+    "kategori": "Roman",
+    "durum": "musait"
+  },
+  {
+    "kitap_id": 24,
+    "ad": "Don Kişot",
+    "yazar": "Miguel de Cervantes",
+    "kategori": "Roman",
+    "durum": "musait"
+  },
+  {
+    "kitap_id": 25,
+    "ad": "Madame Bovary",
+    "yazar": "Gustave Flaubert",
+    "kategori": "Roman",
+    "durum": "musait"
+  },
+  {
+    "kitap_id": 26,
+    "ad": "Bilinçli Tasarım",
+    "yazar": "Stephen Hawking",
+    "kategori": "Bilim",
+    "durum": "musait"
+  },
+  {
+    "kitap_id": 27,
+    "ad": "Tao Te Ching",
+    "yazar": "Lao Tzu",
+    "kategori": "Felsefe",
+    "durum": "musait"
+  },
+  {
+    "kitap_id": 28,
+    "ad": "Otostopçunun Galaksi Rehberi",
+    "yazar": "Douglas Adams",
+    "kategori": "Bilim Kurgu",
+    "durum": "musait"
+  },
+  {
+    "kitap_id": 29,
+    "ad": "Cesur Yeni Dünya",
+    "yazar": "Aldous Huxley",
+    "kategori": "Distopya",
+    "durum": "musait"
+  },
+  {
+    "kitap_id": 30,
+    "ad": "Fareler ve İnsanlar",
+    "yazar": "John Steinbeck",
+    "kategori": "Roman",
+    "durum": "musait"
+  },
+  {
+    "kitap_id": 31,
+    "ad": "Bir var Bir Yok",
+    "yazar": "Berkay Otyakmaz",
+    "kategori": "Roman",
+    "durum": "odunc"
+  }
+]
