@@ -16,21 +16,36 @@ class Uye:
 
     EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
 
+    # Karakter sınırları
+    MAX_AD = 80
+    MAX_EMAIL = 120  # RFC 5321 local-part 64 + domain 255 ama pratikte 120 yeter
+
     def __init__(self, uye_id: int, ad: str, email: str):
-        if not ad or not ad.strip():
+        ad = (ad or "").strip()
+        email = (email or "").strip()
+
+        if not ad:
             raise ValueError("Üye adı boş olamaz.")
+        if len(ad) > self.MAX_AD:
+            raise ValueError(f"Üye adı en fazla {self.MAX_AD} karakter olabilir.")
+        if len(email) > self.MAX_EMAIL:
+            raise ValueError(f"E-posta en fazla {self.MAX_EMAIL} karakter olabilir.")
         if not self._email_gecerli_mi(email):
             raise ValueError(f"Geçersiz e-posta formatı: {email}")
 
         self.uye_id = uye_id
-        self.ad = ad.strip()
-        self.email = email.strip().lower()
+        self.ad = ad
+        self.email = email.lower()
 
     @staticmethod
-    def _email_gecerli_mi(email: str) -> bool:
+    def email_gecerli_mi(email: str) -> bool:
+        """Public validator - dışarıdan da çağrılabilir."""
         if not email or not isinstance(email, str):
             return False
         return bool(Uye.EMAIL_REGEX.match(email.strip()))
+
+    # Geriye uyumluluk
+    _email_gecerli_mi = email_gecerli_mi
 
     def kitap_odunc_al(self, kitap) -> bool:
         """Kitap müsaitse üzerine alır."""

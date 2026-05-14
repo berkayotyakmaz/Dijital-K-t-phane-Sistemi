@@ -1,6 +1,12 @@
 """
 Editorial Tema - Gazete / dergi tipografisi.
 Beyaz fon, mürekkep siyah, editoryal kırmızı.
+
+Düzeltmeler:
+- QPushButton (default) artık siyah çerçeve ile görünür kontrasta sahip
+- HayaletButon "İPTAL" gibi soluk butonlarda artık siyah çerçeve
+- :disabled state artık okunabilir (ink_muted yazı)
+- Sidebar arka planı içerik alanından hafif ayrıştırıldı
 """
 
 RENKLER = {
@@ -9,6 +15,7 @@ RENKLER = {
     "paper_off": "#f6f5f0",      # alternatif yüzey, hover
     "paper_panel": "#ffffff",    # saf beyaz kart
     "paper_inset": "#f0eee8",    # input arkaplanı
+    "paper_sidebar": "#f3f1ea",  # sidebar - paper'dan biraz koyu, ayrıştırıcı
 
     # Mürekkep
     "ink": "#0e0e0c",            # ana metin (mürekkep siyahı)
@@ -70,8 +77,13 @@ QToolTip {{
 
 /* SIDEBAR ========================================================== */
 #Sidebar {{
-    background-color: {RENKLER['paper']};
+    background-color: {RENKLER['paper_sidebar']};
     border-right: 1px solid {RENKLER['rule_thin']};
+}}
+
+#Sidebar QLabel,
+#Sidebar QWidget {{
+    background-color: transparent;
 }}
 
 #MastheadBaslik {{
@@ -127,23 +139,25 @@ QPushButton#MenuButon {{
     border-radius: 0;
     font-family: "Inter", sans-serif;
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0.3px;
 }}
 
 QPushButton#MenuButon:hover {{
-    background-color: {RENKLER['paper_off']};
+    background-color: {RENKLER['paper']};
     color: {RENKLER['ink']};
 }}
 
 QPushButton#MenuButon:checked {{
-    background-color: transparent;
+    background-color: {RENKLER['paper']};
     color: {RENKLER['ink']};
-    font-weight: 700;
+    font-weight: 800;
     border-left: 3px solid {RENKLER['red']};
 }}
 
 #KullaniciKart {{
-    background-color: {RENKLER['paper_off']};
+    background-color: {RENKLER['paper_panel']};
     border: 1px solid {RENKLER['rule_thin']};
     border-radius: 0;
 }}
@@ -258,10 +272,11 @@ QPushButton#MenuButon:checked {{
 }}
 
 /* BUTONLAR ======================================================== */
+/* Default buton: kağıt-üstü-kağıt sorununu çözmek için siyah çerçeve */
 QPushButton {{
-    background-color: {RENKLER['paper_off']};
+    background-color: {RENKLER['paper_panel']};
     color: {RENKLER['ink']};
-    border: 1px solid {RENKLER['rule_thin']};
+    border: 1px solid {RENKLER['ink']};
     padding-left: 18px;
     padding-right: 18px;
     border-radius: 0;
@@ -273,14 +288,21 @@ QPushButton {{
 }}
 
 QPushButton:hover {{
-    background-color: {RENKLER['paper']};
+    background-color: {RENKLER['ink']};
+    color: {RENKLER['paper']};
     border: 1px solid {RENKLER['ink']};
+}}
+
+QPushButton:pressed {{
+    background-color: {RENKLER['red_dark']};
+    color: {RENKLER['paper']};
+    border: 1px solid {RENKLER['red_dark']};
 }}
 
 QPushButton:disabled {{
     background-color: {RENKLER['paper_inset']};
-    color: {RENKLER['ink_faint']};
-    border: 1px solid {RENKLER['rule_hairline']};
+    color: {RENKLER['ink_muted']};
+    border: 1px solid {RENKLER['rule_thin']};
 }}
 
 QPushButton#PrimaryButon {{
@@ -292,6 +314,18 @@ QPushButton#PrimaryButon {{
 QPushButton#PrimaryButon:hover {{
     background-color: {RENKLER['red']};
     border: 1px solid {RENKLER['red']};
+    color: {RENKLER['paper']};
+}}
+
+QPushButton#PrimaryButon:pressed {{
+    background-color: {RENKLER['red_dark']};
+    border: 1px solid {RENKLER['red_dark']};
+}}
+
+QPushButton#PrimaryButon:disabled {{
+    background-color: {RENKLER['ink_muted']};
+    color: {RENKLER['paper_off']};
+    border: 1px solid {RENKLER['ink_muted']};
 }}
 
 QPushButton#BasariButon {{
@@ -303,10 +337,11 @@ QPushButton#BasariButon {{
 QPushButton#BasariButon:hover {{
     background-color: {RENKLER['red']};
     border: 1px solid {RENKLER['red']};
+    color: {RENKLER['paper']};
 }}
 
 QPushButton#IkincilButon {{
-    background-color: {RENKLER['paper']};
+    background-color: {RENKLER['paper_panel']};
     color: {RENKLER['ink']};
     border: 1px solid {RENKLER['ink']};
 }}
@@ -316,22 +351,29 @@ QPushButton#IkincilButon:hover {{
     color: {RENKLER['paper']};
 }}
 
+/* Hayalet buton: önceden border 'rule_thin' idi -> kağıt üstünde silikleşiyordu.
+   Şimdi 1px ink border + ink_dim yazı; hover'da siyah dolgu. */
 QPushButton#HayaletButon {{
     background-color: transparent;
-    color: {RENKLER['ink_dim']};
-    border: 1px solid {RENKLER['rule_thin']};
-}}
-
-QPushButton#HayaletButon:hover {{
-    background-color: {RENKLER['paper_off']};
     color: {RENKLER['ink']};
     border: 1px solid {RENKLER['ink']};
 }}
 
-QPushButton#TehlikeButon {{
-    background-color: transparent;
-    color: {RENKLER['danger']};
+QPushButton#HayaletButon:hover {{
+    background-color: {RENKLER['ink']};
+    color: {RENKLER['paper']};
+    border: 1px solid {RENKLER['ink']};
+}}
+
+QPushButton#HayaletButon:disabled {{
+    color: {RENKLER['ink_muted']};
     border: 1px solid {RENKLER['rule_thin']};
+}}
+
+QPushButton#TehlikeButon {{
+    background-color: {RENKLER['paper_panel']};
+    color: {RENKLER['danger']};
+    border: 1px solid {RENKLER['danger']};
 }}
 
 QPushButton#TehlikeButon:hover {{
@@ -341,7 +383,7 @@ QPushButton#TehlikeButon:hover {{
 }}
 
 QPushButton#KucukIkincilButon {{
-    background-color: {RENKLER['paper']};
+    background-color: {RENKLER['paper_panel']};
     color: {RENKLER['ink']};
     border: 1px solid {RENKLER['ink']};
     padding-left: 12px;
@@ -357,9 +399,9 @@ QPushButton#KucukIkincilButon:hover {{
 }}
 
 QPushButton#KucukTehlikeButon {{
-    background-color: transparent;
+    background-color: {RENKLER['paper_panel']};
     color: {RENKLER['danger']};
-    border: 1px solid {RENKLER['rule_thin']};
+    border: 1px solid {RENKLER['danger']};
     padding-left: 12px;
     padding-right: 12px;
     font-size: 10px;
@@ -398,6 +440,12 @@ QComboBox:focus, QTextEdit:focus {{
 QLineEdit:hover, QSpinBox:hover, QDateTimeEdit:hover,
 QComboBox:hover, QTextEdit:hover {{
     border-bottom: 1px solid {RENKLER['red']};
+}}
+
+QLineEdit:disabled, QComboBox:disabled {{
+    background-color: {RENKLER['paper_inset']};
+    color: {RENKLER['ink_muted']};
+    border: 1px solid {RENKLER['rule_thin']};
 }}
 
 #AramaInput {{
@@ -605,6 +653,7 @@ QMessageBox QLabel {{
 
 QMessageBox QPushButton {{
     min-width: 90px;
+    min-height: 32px;
 }}
 
 /* ROZETLER (chip / ribbon) ======================================== */
@@ -621,7 +670,6 @@ QLabel#RozetBasari {{
     font-size: 9px;
     font-weight: 800;
     min-width: 90px;
-    
     letter-spacing: 1.5px;
 }}
 
@@ -638,7 +686,6 @@ QLabel#RozetUyari {{
     font-size: 9px;
     font-weight: 800;
     min-width: 90px;
-    
     letter-spacing: 1.5px;
 }}
 
@@ -655,7 +702,6 @@ QLabel#RozetTehlike {{
     font-size: 9px;
     font-weight: 800;
     min-width: 90px;
-    
     letter-spacing: 1.5px;
 }}
 
@@ -672,7 +718,6 @@ QLabel#RozetNotr {{
     font-size: 9px;
     font-weight: 800;
     min-width: 90px;
-    
     letter-spacing: 1.5px;
 }}
 

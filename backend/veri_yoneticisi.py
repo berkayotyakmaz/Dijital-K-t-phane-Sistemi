@@ -1,14 +1,47 @@
 """
 Kütüphane Veri Yöneticisi - Tüm modellerin merkezi yönetimi ve JSON kalıcılık.
+
+Önemli: kaydet() atomic yazma kullanır (tmp + os.replace) - yarıda kalan
+yazımlar JSON dosyalarını bozmaz.
 """
 import json
 import os
+import tempfile
 from datetime import datetime
 from typing import Dict, List, Optional
 
 from .kitap import Kitap
 from .uye import Uye
 from .odunc import Odunc
+
+
+def _atomic_json_write(yol: str, veri) -> None:
+    """JSON'u önce aynı klasörde bir tmp dosyaya yazıp os.replace ile değiştirir.
+
+    Crash veya disk dolu durumunda eski dosya bozulmadan kalır.
+    """
+    klasor = os.path.dirname(os.path.abspath(yol)) or "."
+    os.makedirs(klasor, exist_ok=True)
+    fd, tmp_yol = tempfile.mkstemp(
+        prefix=".tmp_", suffix=".json", dir=klasor
+    )
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(veri, f, ensure_ascii=False, indent=2)
+            f.flush()
+            try:
+                os.fsync(f.fileno())
+            except OSError:
+                # Bazı dosya sistemlerinde fsync desteklenmez - sessizce geç
+                pass
+        os.replace(tmp_yol, yol)
+    except Exception:
+        # Tmp dosyayı temizle
+        try:
+            os.remove(tmp_yol)
+        except OSError:
+            pass
+        raise
 
 
 class VeriYoneticisi:
@@ -42,7 +75,7 @@ class VeriYoneticisi:
                         k = Kitap.from_dict(d)
                         self._kitaplar[k.kitap_id] = k
                         self._sonraki_kitap_id = max(self._sonraki_kitap_id, k.kitap_id + 1)
-            except (json.JSONDecodeError, KeyError):
+            except (json.JSONDecodeError, KeyError, ValueError):
                 pass
 
         if os.path.exists(self.uyeler_dosya):
@@ -52,7 +85,7 @@ class VeriYoneticisi:
                         u = Uye.from_dict(d)
                         self._uyeler[u.uye_id] = u
                         self._sonraki_uye_id = max(self._sonraki_uye_id, u.uye_id + 1)
-            except (json.JSONDecodeError, KeyError):
+            except (json.JSONDecodeError, KeyError, ValueError):
                 pass
 
         if os.path.exists(self.oduncler_dosya):
@@ -62,19 +95,23 @@ class VeriYoneticisi:
                         o = Odunc.from_dict(d)
                         self._oduncler[o.odunc_id] = o
                         self._sonraki_odunc_id = max(self._sonraki_odunc_id, o.odunc_id + 1)
-            except (json.JSONDecodeError, KeyError):
+            except (json.JSONDecodeError, KeyError, ValueError):
                 pass
 
     def kaydet(self) -> None:
-        with open(self.kitaplar_dosya, "w", encoding="utf-8") as f:
-            json.dump([k.to_dict() for k in self._kitaplar.values()], f,
-                      ensure_ascii=False, indent=2)
-        with open(self.uyeler_dosya, "w", encoding="utf-8") as f:
-            json.dump([u.to_dict() for u in self._uyeler.values()], f,
-                      ensure_ascii=False, indent=2)
-        with open(self.oduncler_dosya, "w", encoding="utf-8") as f:
-            json.dump([o.to_dict() for o in self._oduncler.values()], f,
-                      ensure_ascii=False, indent=2)
+        """Tüm verileri diske atomik olarak yazar."""
+        _atomic_json_write(
+            self.kitaplar_dosya,
+            [k.to_dict() for k in self._kitaplar.values()],
+        )
+        _atomic_json_write(
+            self.uyeler_dosya,
+            [u.to_dict() for u in self._uyeler.values()],
+        )
+        _atomic_json_write(
+            self.oduncler_dosya,
+            [o.to_dict() for o in self._oduncler.values()],
+        )
 
     # ---------------- KİTAP CRUD ----------------
 
@@ -93,13 +130,26 @@ class VeriYoneticisi:
         kitap = self._kitaplar.get(kitap_id)
         if not kitap:
             raise ValueError(f"Kitap bulunamadı (ID: {kitap_id}).")
-        if not ad.strip():
+
+        # Model üzerinden validate et - tek noktada uzunluk/format kontrolü
+        ad = (ad or "").strip()
+        yazar = (yazar or "").strip()
+        kategori = (kategori or "Genel").strip() or "Genel"
+
+        if not ad:
             raise ValueError("Kitap adı boş olamaz.")
-        if not yazar.strip():
+        if len(ad) > Kitap.MAX_AD:
+            raise ValueError(f"Kitap adı en fazla {Kitap.MAX_AD} karakter olabilir.")
+        if not yazar:
             raise ValueError("Yazar boş olamaz.")
-        kitap.ad = ad.strip()
-        kitap.yazar = yazar.strip()
-        kitap.kategori = (kategori or "Genel").strip()
+        if len(yazar) > Kitap.MAX_YAZAR:
+            raise ValueError(f"Yazar en fazla {Kitap.MAX_YAZAR} karakter olabilir.")
+        if len(kategori) > Kitap.MAX_KATEGORI:
+            raise ValueError(f"Kategori en fazla {Kitap.MAX_KATEGORI} karakter olabilir.")
+
+        kitap.ad = ad
+        kitap.yazar = yazar
+        kitap.kategori = kategori
         self.kaydet()
         return kitap
 
@@ -107,8 +157,14 @@ class VeriYoneticisi:
         kitap = self._kitaplar.get(kitap_id)
         if not kitap:
             return False
+        # Cascade guard: kitabın aktif ödüncü varsa silinemez
+        for o in self._oduncler.values():
+            if o.kitap_id == kitap_id and o.aktif_mi():
+                raise ValueError("Bu kitabın aktif ödüncü var. Önce iade edilmeli.")
+        # Durum tutarsızlığı: kitap.durum 'odunc' ama aktif ödünç yok -> yine de silmeye izin
         if kitap.durum == "odunc":
-            raise ValueError("Ödünçteki kitap silinemez. Önce iade edilmeli.")
+            # Aktif ödünç olmadığı yukarıda doğrulandı; durum yetimi temizle
+            kitap.durum = "musait"
         del self._kitaplar[kitap_id]
         self.kaydet()
         return True
@@ -125,7 +181,7 @@ class VeriYoneticisi:
     # ---------------- ÜYE CRUD ----------------
 
     def uye_ekle(self, ad: str, email: str) -> Uye:
-        email_lower = email.strip().lower()
+        email_lower = (email or "").strip().lower()
         for u in self._uyeler.values():
             if u.email == email_lower:
                 raise ValueError(f"Bu e-posta zaten kayıtlı: {email_lower}")
@@ -141,14 +197,23 @@ class VeriYoneticisi:
         if not uye:
             raise ValueError(f"Üye bulunamadı (ID: {uye_id}).")
 
-        email_lower = email.strip().lower()
+        ad = (ad or "").strip()
+        email_lower = (email or "").strip().lower()
+
+        if not ad:
+            raise ValueError("Üye adı boş olamaz.")
+        if len(ad) > Uye.MAX_AD:
+            raise ValueError(f"Üye adı en fazla {Uye.MAX_AD} karakter olabilir.")
+        if len(email_lower) > Uye.MAX_EMAIL:
+            raise ValueError(f"E-posta en fazla {Uye.MAX_EMAIL} karakter olabilir.")
+        if not Uye.email_gecerli_mi(email_lower):
+            raise ValueError(f"Geçersiz e-posta: {email}")
+
         for u in self._uyeler.values():
             if u.uye_id != uye_id and u.email == email_lower:
                 raise ValueError(f"Bu e-posta başka üyeye ait: {email_lower}")
-        if not Uye._email_gecerli_mi(email):
-            raise ValueError(f"Geçersiz e-posta: {email}")
 
-        uye.ad = ad.strip()
+        uye.ad = ad
         uye.email = email_lower
         self.kaydet()
         return uye
@@ -157,7 +222,7 @@ class VeriYoneticisi:
         uye = self._uyeler.get(uye_id)
         if not uye:
             return False
-        # Aktif ödüncü var mı?
+        # Cascade guard
         for o in self._oduncler.values():
             if o.uye_id == uye_id and o.aktif_mi():
                 raise ValueError("Üye üzerinde aktif ödünç var. Önce iade edilmeli.")
@@ -208,6 +273,10 @@ class VeriYoneticisi:
         uye = self._uyeler.get(odunc.uye_id)
         if kitap and uye:
             uye.kitap_iade_et(kitap)
+        elif kitap:
+            # Üye silinmiş ama kitap duruyor - durumu manuel düzelt
+            if kitap.durum == "odunc":
+                kitap.kitap_durumu_degistir("musait")
 
         odunc.iade_et()
         self.kaydet()

@@ -1,5 +1,8 @@
 """
 Raporlar Sayfası - Editorial yıllık rapor.
+
+CSV export'ta formula injection koruması: =, +, -, @, \\t, \\r ile başlayan
+hücrelere ' ön eki konur (Excel/LibreOffice'in formula çalıştırmasını engeller).
 """
 import csv
 from PyQt5.QtWidgets import (
@@ -29,6 +32,25 @@ from frontend.widgets.bilesenler import (
 )
 
 
+# Excel/LibreOffice/Google Sheets formula injection için tehlikeli karakterler
+# Bir hücre bu karakterlerden biriyle başlarsa formula olarak değerlendirilir.
+_CSV_TEHLIKELI = ("=", "+", "-", "@", "\t", "\r")
+
+
+def _csv_guvenli(deger) -> str:
+    """Bir değeri CSV hücresi için güvenli string'e çevirir.
+
+    Formula injection saldırılarını engellemek için tehlikeli karakterle
+    başlayan değerlerin önüne tek tırnak (') ekler. None -> ''.
+    """
+    if deger is None:
+        return ""
+    s = str(deger)
+    if s and s[0] in _CSV_TEHLIKELI:
+        return "'" + s
+    return s
+
+
 class RaporlarSayfasi(QWidget):
     def __init__(self, vy: VeriYoneticisi, parent=None):
         super().__init__(parent)
@@ -37,7 +59,6 @@ class RaporlarSayfasi(QWidget):
         self.yenile()
 
     def _arayuz_olustur(self):
-        # Scroll
         scroll = QScrollArea(self)
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.NoFrame)
@@ -50,7 +71,6 @@ class RaporlarSayfasi(QWidget):
         ana.setContentsMargins(48, 36, 48, 32)
         ana.setSpacing(28)
 
-        # Header satırı
         header_satir = QHBoxLayout()
         header_satir.setSpacing(20)
 
@@ -62,16 +82,18 @@ class RaporlarSayfasi(QWidget):
         )
         header_satir.addWidget(self.header, 1)
 
-        # CSV indirme butonu
+        # CSV indirme - PrimaryButon tema'dan
         export_btn = QPushButton("⬇  TÜM VERİLERİ CSV OLARAK İNDİR")
-        export_btn.setObjectName("IkincilButon")
+        export_btn.setObjectName("PrimaryButon")
         export_btn.setStyleSheet(
             "QPushButton { background-color: #0e0e0c; color: #fdfdfb; "
             "border: 1px solid #0e0e0c; border-radius: 0; "
             "padding: 0 22px; font-family: 'Inter', sans-serif; "
             "font-size: 11px; font-weight: 800; letter-spacing: 2px; } "
             "QPushButton:hover { background-color: #c9302c; "
-            "border: 1px solid #c9302c; }"
+            "border: 1px solid #c9302c; color: #fdfdfb; } "
+            "QPushButton:pressed { background-color: #9a1f1c; "
+            "border: 1px solid #9a1f1c; color: #fdfdfb; }"
         )
         export_btn.setFixedHeight(46)
         export_btn.setMinimumWidth(280)
@@ -86,7 +108,7 @@ class RaporlarSayfasi(QWidget):
 
         ana.addLayout(header_satir)
 
-        # 4 büyük rakam blok
+        # 4 metrik
         grid = QGridLayout()
         grid.setSpacing(16)
 
@@ -101,11 +123,9 @@ class RaporlarSayfasi(QWidget):
         grid.addWidget(self.blok_oran, 0, 3)
         ana.addLayout(grid)
 
-        # Alt: kategori dağılımı + en aktif okurlar
         alt = QHBoxLayout()
         alt.setSpacing(16)
 
-        # Sol: Kategori Dağılımı
         kategori_kart = Kart(
             "Kategori Dağılımı",
             "Koleksiyondaki kitapların kategorilere göre dağılımı.",
@@ -116,7 +136,6 @@ class RaporlarSayfasi(QWidget):
         kategori_kart.layout.addWidget(self.kategori_widget)
         alt.addWidget(kategori_kart, 1)
 
-        # Sağ: En Aktif Okurlar
         aktif_kart = Kart(
             "En Aktif Okurlar",
             "Tüm zamanlarda en çok ödünç alan beş üye.",
@@ -130,7 +149,6 @@ class RaporlarSayfasi(QWidget):
         alt.addWidget(aktif_kart, 1)
 
         ana.addLayout(alt)
-
         ana.addStretch()
 
         dis_layout = QVBoxLayout(self)
@@ -138,7 +156,6 @@ class RaporlarSayfasi(QWidget):
         dis_layout.addWidget(scroll)
 
     def _layout_temizle(self, layout):
-        """Layout'tan tüm widget ve spacer'ları çıkarır."""
         while layout.count():
             item = layout.takeAt(0)
             w = item.widget()
@@ -163,7 +180,6 @@ class RaporlarSayfasi(QWidget):
 
         self.blok_oran.deger_ayarla(f"%{stats['kullanim_orani']}")
 
-        # Kategori dağılım
         self._layout_temizle(self.kategori_widget.layout())
         dagilim = self.vy.kategori_dagilim()
         if dagilim:
@@ -180,7 +196,6 @@ class RaporlarSayfasi(QWidget):
             bos.setAlignment(Qt.AlignCenter)
             self.kategori_widget.layout().addWidget(bos)
 
-        # En aktif okurlar
         self._layout_temizle(self.aktif_uyeler_layout)
 
         sayim = {}
@@ -211,7 +226,6 @@ class RaporlarSayfasi(QWidget):
         self.aktif_uyeler_layout.addStretch()
 
     def _uye_satiri(self, sira: int, uye, sayi: int) -> QFrame:
-        """Editorial okur satırı: gazete sıra no + mühür + ad + ödünç."""
         f = QFrame()
         f.setStyleSheet(
             "QFrame { background-color: #fdfdfb; "
@@ -222,7 +236,6 @@ class RaporlarSayfasi(QWidget):
         layout.setContentsMargins(4, 12, 4, 12)
         layout.setSpacing(14)
 
-        # Sıra no - büyük serif rakam
         no_lbl = QLabel(f"{sira:02d}")
         no_lbl.setFixedWidth(40)
         no_lbl.setStyleSheet(
@@ -234,10 +247,8 @@ class RaporlarSayfasi(QWidget):
         no_lbl.setAlignment(Qt.AlignCenter)
         layout.addWidget(no_lbl)
 
-        # Mühür avatar
         layout.addWidget(MuhurAvatar(uye.ad, boyut=36))
 
-        # Ad + email
         bilgi = QVBoxLayout()
         bilgi.setSpacing(2)
         bilgi.setContentsMargins(0, 0, 0, 0)
@@ -259,7 +270,6 @@ class RaporlarSayfasi(QWidget):
         bilgi.addWidget(email)
         layout.addLayout(bilgi, 1)
 
-        # Sayı (büyük serif)
         sayi_kutu = QVBoxLayout()
         sayi_kutu.setSpacing(0)
         sayi_kutu.setContentsMargins(0, 0, 0, 0)
@@ -295,52 +305,58 @@ class RaporlarSayfasi(QWidget):
         if not dosya_yolu:
             return
 
+        def yaz(satir):
+            """Satırdaki tüm hücreleri _csv_guvenli'den geçirip yazar."""
+            return [_csv_guvenli(x) for x in satir]
+
         try:
             with open(dosya_yolu, "w", newline="", encoding="utf-8-sig") as f:
                 w = csv.writer(f)
                 stats = self.vy.genel_istatistikler()
 
-                w.writerow(["THE LIBRARY — YILLIK RAPOR"])
+                w.writerow(yaz(["THE LIBRARY — YILLIK RAPOR"]))
                 w.writerow([])
-                w.writerow(["Toplam Kitap", stats["toplam_kitap"]])
-                w.writerow(["Müsait", stats["musait_kitap"]])
-                w.writerow(["Ödünçte", stats["odunc_kitap"]])
-                w.writerow(["Toplam Üye", stats["toplam_uye"]])
-                w.writerow(["Aktif Ödünç", stats["aktif_odunc"]])
-                w.writerow(["Geciken", stats["gecikmis_odunc"]])
-                w.writerow(["Toplam İşlem", stats["toplam_islem"]])
-                w.writerow(["Kullanım Oranı", f"%{stats['kullanim_orani']}"])
+                w.writerow(yaz(["Toplam Kitap", stats["toplam_kitap"]]))
+                w.writerow(yaz(["Müsait", stats["musait_kitap"]]))
+                w.writerow(yaz(["Ödünçte", stats["odunc_kitap"]]))
+                w.writerow(yaz(["Toplam Üye", stats["toplam_uye"]]))
+                w.writerow(yaz(["Aktif Ödünç", stats["aktif_odunc"]]))
+                w.writerow(yaz(["Geciken", stats["gecikmis_odunc"]]))
+                w.writerow(yaz(["Toplam İşlem", stats["toplam_islem"]]))
+                w.writerow(yaz(["Kullanım Oranı", f"%{stats['kullanim_orani']}"]))
                 w.writerow([])
 
-                w.writerow(["KATEGORI DAĞILIMI"])
+                w.writerow(yaz(["KATEGORI DAĞILIMI"]))
                 for k, v in sorted(self.vy.kategori_dagilim().items(),
                                    key=lambda x: -x[1]):
-                    w.writerow([k, v])
+                    w.writerow(yaz([k, v]))
                 w.writerow([])
 
-                w.writerow(["TÜM ÖDÜNÇ KAYITLARI"])
-                w.writerow([
+                w.writerow(yaz([
                     "İşlem No", "Kitap", "Yazar", "Okur", "E-posta",
                     "Ödünç Tarihi", "Son Teslim", "İade Tarihi", "Durum"
-                ])
+                ]))
+                # Silinmiş kitap/üye olsa bile kaydı atlamayalım - tarihçe önemli
                 for o in self.vy.tum_oduncler():
                     k = self.vy.kitap_getir(o.kitap_id)
                     u = self.vy.uye_getir(o.uye_id)
-                    if not k or not u:
-                        continue
                     if not o.aktif_mi():
                         durum = "İade Edildi"
                     elif o.gecikme_var_mi():
                         durum = f"Gecikmiş ({abs(o.kalan_gun())} gün)"
                     else:
                         durum = f"Aktif ({o.kalan_gun()} gün)"
-                    w.writerow([
-                        o.odunc_id, k.ad, k.yazar, u.ad, u.email,
+                    w.writerow(yaz([
+                        o.odunc_id,
+                        k.ad if k else "(silinmiş kitap)",
+                        k.yazar if k else "",
+                        u.ad if u else "(silinmiş üye)",
+                        u.email if u else "",
                         o.odunc_tarihi.strftime("%d.%m.%Y"),
                         o.son_teslim_tarihi.strftime("%d.%m.%Y"),
                         o.iade_tarihi.strftime("%d.%m.%Y") if o.iade_tarihi else "",
                         durum,
-                    ])
+                    ]))
 
             QMessageBox.information(
                 self, "Başarılı", f"Rapor kaydedildi:\n{dosya_yolu}"

@@ -17,19 +17,34 @@ class Kitap:
 
     GECERLI_DURUMLAR = ("musait", "odunc")
 
+    # Karakter sınırları - JSON şişmesini ve UI taşmasını engeller
+    MAX_AD = 120
+    MAX_YAZAR = 80
+    MAX_KATEGORI = 40
+
     def __init__(self, kitap_id: int, ad: str, yazar: str, kategori: str,
                  durum: str = "musait"):
-        if not ad or not ad.strip():
+        ad = (ad or "").strip()
+        yazar = (yazar or "").strip()
+        kategori = (kategori or "Genel").strip() or "Genel"
+
+        if not ad:
             raise ValueError("Kitap adı boş olamaz.")
-        if not yazar or not yazar.strip():
+        if len(ad) > self.MAX_AD:
+            raise ValueError(f"Kitap adı en fazla {self.MAX_AD} karakter olabilir.")
+        if not yazar:
             raise ValueError("Yazar boş olamaz.")
+        if len(yazar) > self.MAX_YAZAR:
+            raise ValueError(f"Yazar en fazla {self.MAX_YAZAR} karakter olabilir.")
+        if len(kategori) > self.MAX_KATEGORI:
+            raise ValueError(f"Kategori en fazla {self.MAX_KATEGORI} karakter olabilir.")
         if durum not in self.GECERLI_DURUMLAR:
             raise ValueError(f"Geçersiz durum: {durum}")
 
         self.kitap_id = kitap_id
-        self.ad = ad.strip()
-        self.yazar = yazar.strip()
-        self.kategori = (kategori or "Genel").strip()
+        self.ad = ad
+        self.yazar = yazar
+        self.kategori = kategori
         self.durum = durum
 
     def kitap_durumu_degistir(self, yeni_durum: str) -> None:

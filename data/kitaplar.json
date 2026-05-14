@@ -208,12 +208,5 @@
     "yazar": "John Steinbeck",
     "kategori": "Roman",
     "durum": "musait"
-  },
-  {
-    "kitap_id": 31,
-    "ad": "Bir var Bir Yok",
-    "yazar": "Berkay Otyakmaz",
-    "kategori": "Roman",
-    "durum": "odunc"
   }
 ]

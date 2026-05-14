@@ -33,6 +33,7 @@ def _form_satiri(etiket_metni: str, alan_widget) -> QVBoxLayout:
 
 
 def _diyalog_butonlari(iptal_metin="İPTAL", kaydet_metin="KAYDET"):
+    """İPTAL: HayaletButon (tema'dan siyah çerçeve), KAYDET: PrimaryButon."""
     iptal_btn = QPushButton(iptal_metin)
     iptal_btn.setObjectName("HayaletButon")
     iptal_btn.setFixedHeight(42)
@@ -41,13 +42,17 @@ def _diyalog_butonlari(iptal_metin="İPTAL", kaydet_metin="KAYDET"):
 
     kaydet_btn = QPushButton(kaydet_metin)
     kaydet_btn.setObjectName("PrimaryButon")
+    # Inline override yok - tema'daki PrimaryButon stili kullanılır
     kaydet_btn.setStyleSheet(
-        "QPushButton { background-color: #0e0e0c; color: #fdfdfb; "
+        "QPushButton#PrimaryButon { "
+        "background-color: #0e0e0c; color: #fdfdfb; "
         "border: 1px solid #0e0e0c; border-radius: 0; "
         "padding: 0 22px; font-family: 'Inter', sans-serif; "
         "font-size: 11px; font-weight: 800; letter-spacing: 2px; } "
-        "QPushButton:hover { background-color: #c9302c; "
-        "border: 1px solid #c9302c; }"
+        "QPushButton#PrimaryButon:hover { background-color: #c9302c; "
+        "border: 1px solid #c9302c; color: #fdfdfb; } "
+        "QPushButton#PrimaryButon:pressed { background-color: #9a1f1c; "
+        "border: 1px solid #9a1f1c; color: #fdfdfb; }"
     )
     kaydet_btn.setFixedHeight(42)
     kaydet_btn.setMinimumWidth(140)
@@ -62,7 +67,6 @@ def _editorial_baslik(metin: str, kategori: str = "EDİTORYAL") -> QVBoxLayout:
     l.setSpacing(8)
     l.setContentsMargins(0, 0, 0, 0)
 
-    # Kategori (kırmızı tag)
     kat = QLabel(kategori)
     kat.setStyleSheet(
         "color: #c9302c; font-family: 'Inter', sans-serif; "
@@ -71,7 +75,6 @@ def _editorial_baslik(metin: str, kategori: str = "EDİTORYAL") -> QVBoxLayout:
     )
     l.addWidget(kat)
 
-    # Büyük başlık (serif)
     bl = QLabel(metin)
     bl.setStyleSheet(
         "color: #0e0e0c; font-family: 'Playfair Display', 'Georgia', serif; "
@@ -80,7 +83,6 @@ def _editorial_baslik(metin: str, kategori: str = "EDİTORYAL") -> QVBoxLayout:
     )
     l.addWidget(bl)
 
-    # Kalın çizgi
     cizgi = QFrame()
     cizgi.setFixedHeight(2)
     cizgi.setStyleSheet("background-color: #0e0e0c;")
@@ -120,7 +122,6 @@ class KitapDiyalog(QDialog):
         kategori = "DÜZENLE" if self.duzenleme_modu else "YENİ KİTAP"
         ana.addLayout(_editorial_baslik(baslik, kategori))
 
-        # Açıklama
         aciklama = QLabel(
             "Tüm alanlar zorunludur. Kategori, koleksiyon "
             "etiketlemesinde kullanılır."
@@ -135,14 +136,19 @@ class KitapDiyalog(QDialog):
 
         self.ad_input = QLineEdit()
         self.ad_input.setPlaceholderText("Örn: Suç ve Ceza")
+        self.ad_input.setMaxLength(Kitap.MAX_AD)
         self.ad_input.returnPressed.connect(lambda: self.yazar_input.setFocus())
 
         self.yazar_input = QLineEdit()
         self.yazar_input.setPlaceholderText("Örn: Fyodor Dostoyevski")
+        self.yazar_input.setMaxLength(Kitap.MAX_YAZAR)
         self.yazar_input.returnPressed.connect(self._kaydet)
 
         self.kategori_combo = QComboBox()
         self.kategori_combo.setEditable(True)
+        # Editable combo'nun line edit'ine maxLength uygula
+        if self.kategori_combo.lineEdit():
+            self.kategori_combo.lineEdit().setMaxLength(Kitap.MAX_KATEGORI)
         for k in KATEGORILER:
             self.kategori_combo.addItem(k)
 
@@ -235,10 +241,12 @@ class UyeDiyalog(QDialog):
 
         self.ad_input = QLineEdit()
         self.ad_input.setPlaceholderText("Örn: Beko Yılmaz")
+        self.ad_input.setMaxLength(Uye.MAX_AD)
         self.ad_input.returnPressed.connect(lambda: self.email_input.setFocus())
 
         self.email_input = QLineEdit()
         self.email_input.setPlaceholderText("ornek@domain.com")
+        self.email_input.setMaxLength(Uye.MAX_EMAIL)
         self.email_input.returnPressed.connect(self._kaydet)
 
         ana.addLayout(_form_satiri("Ad Soyad", self.ad_input))
@@ -276,7 +284,8 @@ class UyeDiyalog(QDialog):
             QMessageBox.warning(self, "Eksik Bilgi", "E-posta boş olamaz.")
             self.email_input.setFocus()
             return
-        if "@" not in email or "." not in email.split("@")[-1]:
+        # Tek otoriteli validator: Uye.email_gecerli_mi
+        if not Uye.email_gecerli_mi(email):
             QMessageBox.warning(
                 self, "Geçersiz E-posta",
                 "Lütfen geçerli bir e-posta adresi girin.\nÖrnek: ornek@domain.com"
@@ -333,7 +342,6 @@ class OduncVerDiyalog(QDialog):
         ana.addLayout(_form_satiri("Kitap", self.kitap_combo))
         ana.addLayout(_form_satiri("Üye", self.uye_combo))
 
-        # Bilgi kutu - editorial alıntı stili
         bilgi_kutu = QFrame()
         bilgi_kutu.setStyleSheet(
             "background-color: #f6f5f0; "
@@ -362,25 +370,8 @@ class OduncVerDiyalog(QDialog):
         btn_layout = QHBoxLayout()
         btn_layout.setSpacing(10)
 
-        iptal_btn = QPushButton("İPTAL")
-        iptal_btn.setObjectName("HayaletButon")
-        iptal_btn.setFixedHeight(42)
-        iptal_btn.setMinimumWidth(110)
-        iptal_btn.setCursor(Qt.PointingHandCursor)
+        iptal_btn, olustur_btn = _diyalog_butonlari(kaydet_metin="ÖDÜNÇ VER")
         iptal_btn.clicked.connect(self.reject)
-
-        olustur_btn = QPushButton("ÖDÜNÇ VER")
-        olustur_btn.setStyleSheet(
-            "QPushButton { background-color: #0e0e0c; color: #fdfdfb; "
-            "border: 1px solid #0e0e0c; border-radius: 0; "
-            "padding: 0 22px; font-family: 'Inter', sans-serif; "
-            "font-size: 11px; font-weight: 800; letter-spacing: 2px; } "
-            "QPushButton:hover { background-color: #c9302c; "
-            "border: 1px solid #c9302c; }"
-        )
-        olustur_btn.setFixedHeight(42)
-        olustur_btn.setMinimumWidth(160)
-        olustur_btn.setCursor(Qt.PointingHandCursor)
         olustur_btn.clicked.connect(self._kaydet)
 
         btn_layout.addStretch()

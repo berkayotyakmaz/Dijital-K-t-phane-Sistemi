@@ -121,6 +121,7 @@ def seed_uygula(vy: VeriYoneticisi) -> None:
         if iade_edildi and kac_gun_sonra is not None:
             # İade işlemini geriye doğru yap
             odunc.iade_tarihi = odunc.odunc_tarihi + timedelta(days=kac_gun_sonra)
-            kitap.durum = "musait"  # Direk durumu güncelle çünkü iade tarihi geçmişte
+            # Kitap durumunu model metodu üzerinden güncelle (validation korunur)
+            kitap.kitap_durumu_degistir("musait")
 
     vy.kaydet()

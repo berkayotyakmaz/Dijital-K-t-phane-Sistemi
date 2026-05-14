@@ -15,78 +15,13 @@ from PyQt5.QtWidgets import (
     QScrollArea,
 )
 from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QFont, QColor
 
 from backend import VeriYoneticisi
 from frontend.widgets.bilesenler import (
     EditorialHeader,
     KitapKapagi,
-    Rozet,
 )
 from frontend.widgets.diyaloglar import KitapDiyalog
-
-
-class _KitapKart(QFrame):
-    """Tek bir kitap için editorial kart - kapak + bilgi + butonlar."""
-
-    duzenle_isteniyor = pyqtSignal(int)
-    sil_isteniyor = pyqtSignal(int)
-
-    def __init__(self, kitap, parent=None):
-        super().__init__(parent)
-        self.kitap = kitap
-        self.setStyleSheet(
-            "QFrame { background-color: #ffffff; "
-            "border: 1px solid #e8e7df; border-radius: 0; }"
-            "QFrame:hover { border: 1px solid #0e0e0c; }"
-        )
-        self.setFixedHeight(360)
-
-        ana = QVBoxLayout(self)
-        ana.setContentsMargins(20, 20, 20, 20)
-        ana.setSpacing(14)
-
-        # Kapak ortalanmış
-        kapak_sarici = QHBoxLayout()
-        kapak_sarici.addStretch()
-        kapak_sarici.addWidget(
-            KitapKapagi(kitap.ad, kitap.yazar, kitap.kategori, kitap.musait_mi())
-        )
-        kapak_sarici.addStretch()
-        ana.addLayout(kapak_sarici)
-
-        # Kategori tag (kırmızı)
-        kat = QLabel(kitap.kategori.upper())
-        kat.setStyleSheet(
-            "color: #c9302c; font-family: 'Inter', sans-serif; "
-            "font-size: 9px; font-weight: 800; letter-spacing: 2px; "
-            "background: transparent; border: none;"
-        )
-        ana.addWidget(kat)
-
-        # Kitap adı (serif)
-        ad = QLabel(kitap.ad)
-        ad.setWordWrap(True)
-        ad.setStyleSheet(
-            "color: #0e0e0c; "
-            "font-family: 'Playfair Display', 'Georgia', serif; "
-            "font-size: 14px; font-weight: 800; letter-spacing: -0.2px; "
-            "background: transparent; border: none;"
-        )
-        ad.setFixedHeight(40)
-        ana.addWidget(ad)
-
-        # Yazar (italic)
-        yazar = QLabel(f"— {kitap.yazar}")
-        yazar.setStyleSheet(
-            "color: #7a7a72; "
-            "font-family: 'Playfair Display', 'Georgia', serif; "
-            "font-size: 11px; font-style: italic; "
-            "background: transparent; border: none;"
-        )
-        ana.addWidget(yazar)
-
-        ana.addStretch()
 
 
 class KitaplarSayfasi(QWidget):
@@ -122,7 +57,7 @@ class KitaplarSayfasi(QWidget):
         )
         header_satir.addWidget(self.header, 1)
 
-        # Yeni Kitap butonu (sağ üst)
+        # Yeni Kitap butonu (sağ üst) - tema'daki PrimaryButon
         ekle_btn = QPushButton("＋  YENİ KİTAP")
         ekle_btn.setObjectName("PrimaryButon")
         ekle_btn.setStyleSheet(
@@ -131,14 +66,15 @@ class KitaplarSayfasi(QWidget):
             "padding: 0 22px; font-family: 'Inter', sans-serif; "
             "font-size: 11px; font-weight: 800; letter-spacing: 2px; } "
             "QPushButton:hover { background-color: #c9302c; "
-            "border: 1px solid #c9302c; }"
+            "border: 1px solid #c9302c; color: #fdfdfb; } "
+            "QPushButton:pressed { background-color: #9a1f1c; "
+            "border: 1px solid #9a1f1c; color: #fdfdfb; }"
         )
         ekle_btn.setFixedHeight(46)
         ekle_btn.setMinimumWidth(170)
         ekle_btn.setCursor(Qt.PointingHandCursor)
         ekle_btn.clicked.connect(self._ekle)
 
-        # Header'ın sağına butonu hizala
         btn_sarici = QVBoxLayout()
         btn_sarici.addStretch()
         btn_sarici.addWidget(ekle_btn)
@@ -155,6 +91,7 @@ class KitaplarSayfasi(QWidget):
         self.arama.setObjectName("AramaInput")
         self.arama.setPlaceholderText("ARA  ·  Kitap adı, yazar veya kategori...")
         self.arama.setFixedHeight(44)
+        self.arama.setMaxLength(120)
         self.arama.textChanged.connect(self.yenile)
         filtre.addWidget(self.arama, 1)
 
@@ -196,7 +133,7 @@ class KitaplarSayfasi(QWidget):
         ana.addWidget(self.scroll, 1)
 
     def yenile(self):
-        # Grid'i temizle
+        # Grid'i temizle (takeAt + deleteLater - leak önler)
         while self.grid.count():
             item = self.grid.takeAt(0)
             w = item.widget()
@@ -248,7 +185,6 @@ class KitaplarSayfasi(QWidget):
         for c in range(cols):
             self.grid.setColumnStretch(c, 1)
 
-        # Her satıra minimum yükseklik vererek kapakların ezilmemesini sağla
         n_satir = (len(kitaplar) + cols - 1) // cols
         for r in range(n_satir):
             self.grid.setRowMinimumHeight(r, 460)
@@ -267,7 +203,7 @@ class KitaplarSayfasi(QWidget):
         ana.setContentsMargins(18, 18, 18, 18)
         ana.setSpacing(10)
 
-        # Kapak ortalanmış - sabit yükseklik garantisi
+        # Kapak ortalanmış
         kapak_sarici_w = QWidget()
         kapak_sarici_w.setFixedHeight(225)
         kapak_sarici = QHBoxLayout(kapak_sarici_w)
